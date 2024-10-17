@@ -1,0 +1,51 @@
+# Step 1: Install Required Packages
+!apt-get install -y ocrmypdf
+
+# Step 2: Import Libraries
+import pymupdf
+import os
+from google.colab import files
+import subprocess
+import shutil
+from google.colab import drive
+
+# Step 3: Mount Google Drive
+drive.mount('/content/drive')
+
+# Step 4: Upload PDF files from your local machine
+uploaded = files.upload()
+
+# Step 5: Apply OCR to the Uploaded PDF without Preprocessing
+uploaded_filename = list(uploaded.keys())[0]
+oct_output_filename = f"ocr_{uploaded_filename}"
+try:
+    print(f"Starting OCR on file: {uploaded_filename}")
+    result = subprocess.run(
+        [
+            "ocrmypdf",
+            "-l", "eng",
+            uploaded_filename,
+            oct_output_filename
+        ],
+        check=True,
+        text=True
+    )
+    print(f"OCR completed successfully for file: {uploaded_filename}")
+except subprocess.CalledProcessError as e:
+    print(f"Error occurred while running OCRmyPDF: {e.stderr}")
+    raise
+
+# Step 6: Save OCR output to Google Drive and Download
+output_drive_path = f"/content/drive/MyDrive/OCR_Scanned_PDFs/{oct_output_filename}"
+print(f"Saving OCR output to Google Drive: {output_drive_path}")
+os.makedirs(os.path.dirname(output_drive_path), exist_ok=True)
+shutil.move(oct_output_filename, output_drive_path)
+
+if os.path.exists(output_drive_path):
+    print(f"OCR output saved successfully: {output_drive_path}")
+    try:
+        files.download(output_drive_path)
+    except Exception as e:
+        print(f"Error occurred while downloading the file: {e}")
+else:
+    print(f"File {output_drive_path} was not created. Please check the OCR process for issues.")
